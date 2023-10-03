@@ -1,9 +1,13 @@
-import React from 'react'
+import React from 'react';
+import Quiz from './Quiz';
 
-export default function App() {
+function App() {
   return (
-    <h1 className="text-3xl text-blue-600 font-bold underline">
-      Hello world!
-    </h1>
-  )
+    <div>
+      <h1>MCQ Quiz App</h1>
+      <Quiz />
+    </div>
+  );
 }
+
+export default App;
