@@ -3,38 +3,107 @@ import { create } from "zustand";
 const sampleQuestions = [
   {
     question: "What is the capital of France?",
-    options: ["London", "Berlin", "Paris", "Madrid"],
+    options: ["London", "Berlin", "Madrid"],
     answer: "Paris",
   },
   {
     question: "Which planet is known as the Red Planet?",
-    options: ["Mars", "Venus", "Jupiter", "Mercury"],
+    options: ["Venus", "Jupiter", "Mercury"],
     answer: "Mars",
   },
   {
     question: "What is the largest mammal?",
-    options: ["Elephant", "Giraffe", "Whale", "Kangaroo"],
+    options: ["Elephant", "Giraffe", "Kangaroo"],
+    answer: "Whale",
+  },
+  {
+    question: "What is the capital of France?",
+    options: ["London", "Berlin", "Madrid"],
+    answer: "Paris",
+  },
+  {
+    question: "Which planet is known as the Red Planet?",
+    options: ["Venus", "Jupiter", "Mercury"],
+    answer: "Mars",
+  },
+  {
+    question: "What is the largest mammal?",
+    options: ["Elephant", "Giraffe", "Kangaroo"],
     answer: "Whale",
   },
 ];
 
 const useQuizStore = create((set) => ({
+  categoryId: "",
+  set: "",
   questions: [],
+  statusArr: [],
   currentQuestionIndex: 0,
-  selectedAnswers: [],
-  timer: 15,
+  timer: 0,
   isQuizOver: false,
   result: null,
 
-  loadQuestions: () => {
-    set({ questions: sampleQuestions });
+  startExamination: (categoryId, selectedSet) => {
+    try {
+      // const response = await axios.get(`/api/questions?categoryId=${categoryId}&set=${set}`);
+      // const fetchedQuestions = response.data;
+      // const statusArr = new Array(fetchedQuestions.length).fill(false);
+      const statusArr = new Array(sampleQuestions.length).fill(false);
+
+      set({
+        categoryId,
+        set: selectedSet,
+        questions: sampleQuestions,
+        statusArr,
+        currentQuestionIndex: 0,
+        timer: 30,
+        isQuizOver: false,
+        result: null,
+      });
+      const state = useQuizStore.getState();
+      state.startTimer();
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+    }
+  },
+
+  startTimer: () => {
+    const state = useQuizStore.getState();
+    let timer = state.timer;
+    const timerInterval = setInterval(() => {
+      timer -= 1;
+      set({ timer });
+    }, 1000);
+
+    // Calculate the quiz result when the timer expires
+    setTimeout(() => {
+      clearInterval(timerInterval);
+      state.calculateResult();
+    }, state.timer * 1000);
   },
 
   selectOption: (questionIndex, selectedOption) => {
     set((state) => {
       const updatedQuestions = [...state.questions];
       updatedQuestions[questionIndex].selectedOption = selectedOption;
-      return { questions: updatedQuestions };
+      const updatedStatusArr = [...state.statusArr];
+      updatedStatusArr[questionIndex] = true;
+      return { questions: updatedQuestions, statusArr: updatedStatusArr };
+    });
+  },
+
+  clearSelectedOption: (questionIndex) => {
+    set((state) => {
+      const updatedStatusArr = [...state.statusArr];
+      updatedStatusArr[questionIndex] = false;
+
+      const updatedQuestions = [...state.questions];
+      updatedQuestions[questionIndex].selectedOption = null;
+
+      return {
+        questions: updatedQuestions,
+        statusArr: updatedStatusArr,
+      };
     });
   },
 
@@ -44,17 +113,6 @@ const useQuizStore = create((set) => ({
 
   previousQuestion: () => {
     set((state) => ({ currentQuestionIndex: state.currentQuestionIndex - 1 }));
-  },
-
-  startTimer: () => {
-    const timerInterval = setInterval(() => {
-      set((state) => ({ timer: state.timer - 1 })); // Decrease the timer
-    }, 1000);
-    const state = useQuizStore.getState();
-    setTimeout(() => {
-      clearInterval(timerInterval);
-      state.calculateResult();
-    }, state.timer * 1000);
   },
 
   calculateResult: () => {

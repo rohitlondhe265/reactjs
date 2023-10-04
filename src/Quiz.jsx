@@ -1,13 +1,14 @@
-import React, { useEffect } from "react";
+import { useState } from "react";
 import useQuizStore from "./store/quizStore";
+import { useEffect } from "react";
 
 function Quiz() {
   const {
     questions,
     currentQuestionIndex,
     timer,
-    loadQuestions,
-    startTimer,
+    statusArr,
+    clearSelectedOption,
     result,
     isQuizOver,
     selectOption,
@@ -15,22 +16,35 @@ function Quiz() {
     previousQuestion,
   } = useQuizStore();
 
-  useEffect(() => {
-    if (questions.length === 0) {
-      loadQuestions();
-      startTimer();
-    }
-  }, [loadQuestions, startTimer, questions]);
-
-  if (questions.length === 0) {
-    return <div>Loading questions...</div>;
-  }
-
   const currentQuestion = questions[currentQuestionIndex];
 
   const handleOptionChange = (e) => {
     selectOption(currentQuestionIndex, e.target.value);
   };
+
+  const isAnswered = statusArr[currentQuestionIndex];
+  const handleClearOption = () => {
+    clearSelectedOption(currentQuestionIndex);
+  };
+
+  const [options, setOptions] = useState();
+  useEffect(() => {
+    setOptions(
+      currentQuestion &&
+        handleShuffle([
+          currentQuestion?.answer,
+          ...currentQuestion?.options,
+        ])
+    );
+  }, [currentQuestionIndex, currentQuestion]);
+
+  const handleShuffle = (options) => {
+    return options.sort(() => Math.random() - 0.5);
+  };
+
+  if (questions.length === 0) {
+    return <div>Loading questions...</div>;
+  }
   return (
     <div>
       {isQuizOver ? (
@@ -45,7 +59,7 @@ function Quiz() {
         <div>
           <h2>Question {currentQuestionIndex + 1}</h2>
           <p>{currentQuestion.question}</p>
-          {currentQuestion.options.map((option) => (
+          {options?.map((option) => (
             <div key={option}>
               <label>
                 <input
@@ -73,6 +87,14 @@ function Quiz() {
           >
             Next
           </button>
+          {isAnswered && (
+            <button
+              className="bg-red-500 text-white px-2 py-1 mt-2 rounded-md hover:bg-red-600 transition duration-300"
+              onClick={handleClearOption}
+            >
+              Clear Option
+            </button>
+          )}
         </div>
       )}
     </div>
